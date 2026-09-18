@@ -10,7 +10,9 @@ class Settings(BaseSettings):
 
     redis_url: str
 
-    secret_key: str
+    access_secret_key: str
+
+    refresh_secret_key: str
 
     upload_dir: str = "uploads"
 

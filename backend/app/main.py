@@ -1,22 +1,22 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(
-    title="MetricsNumero API",
-    description="AI-Powered Pharmaceutical Quality Intelligence & Compliance Platform",
-    version="1.0.0",
+from app.api.v1.health import router as health_router
+
+
+app = FastAPI(title="MetricsNumero API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+api_router = APIRouter(
+    prefix="/api/v1",
+)
 
-@app.get("/")
-def root():
-    return {
-        "message": "MetricsNumero API",
-        "status": "running",
-    }
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "healthy",
-    }
+api_router.include_router(health_router)
+app.include_router(api_router)

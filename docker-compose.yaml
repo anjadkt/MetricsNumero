@@ -1,0 +1,167 @@
+services:
+
+  # ==========================================
+  # FRONTEND
+  # ==========================================
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: metricsnumero-frontend
+
+    ports:
+      - "5173:5173"
+
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+    env_file:
+      - ./frontend/.env
+
+    depends_on:
+      - backend
+
+    networks:
+      - metricsnumero-network
+
+
+  # ==========================================
+  # BACKEND
+  # ==========================================
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: metricsnumero-backend
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./backend:/app
+
+    env_file:
+      - ./backend/.env
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_started
+
+    networks:
+      - metricsnumero-network
+
+
+  # ==========================================
+  # CELERY WORKER
+  # ==========================================
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: metricsnumero-celery
+
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=info
+
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+
+    env_file:
+      - ./backend/.env
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_started
+
+    networks:
+      - metricsnumero-network
+
+
+  # ==========================================
+  # POSTGRESQL
+  # ==========================================
+
+  postgres:
+    image: postgres:17
+
+    container_name: metricsnumero-postgres
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: metricsnumero
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - metricsnumero-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d metricsnumero"
+        ]
+
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - metricsnumero-network
+
+
+  # ==========================================
+  # REDIS
+  # ==========================================
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: metricsnumero-redis
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - metricsnumero-redis-data:/data
+
+    command: redis-server --appendonly yes
+
+    networks:
+      - metricsnumero-network
+
+
+# ==========================================
+# VOLUMES
+# ==========================================
+
+volumes:
+
+  metricsnumero-postgres-data:
+
+  metricsnumero-redis-data:
+
+
+# ==========================================
+# NETWORK
+# ==========================================
+
+networks:
+
+  metricsnumero-network:
+    driver: bridge
