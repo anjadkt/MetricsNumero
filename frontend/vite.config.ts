@@ -1,30 +1,8 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 
-
-// https://vitejs.dev/config/
-export default defineConfig(() => ({
-  server: {
-    host: "::",
-    port: 5173,
-    strictPort: true,
-    allowedHosts: true as const,
-    hmr: {
-      overlay: false,
-    },
-    proxy: {
-      '/ollama-api': {
-        target: 'https://ollama.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ollama-api/, '')
-      }
-    }
-  },
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [tailwindcss(), react()],
+})
